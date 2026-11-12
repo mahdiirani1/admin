@@ -1,0 +1,1092 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1e3a8a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>پنل مدیر تولید | لوحة مدير الإنتاج</title>
+<style>
+  :root {
+    --bg: #f3f5fa; --card: #ffffff; --text: #141c2b; --muted: #5a6780;
+    --brand: #1e3a8a; --brand-dark: #172c69; --accent: #2563eb; --line: #dbe1ee; --grid: #e6eaf3;
+    --ok: #15803d; --err: #b91c1c; --warn: #b45309; --waste: #dc2626;
+    --s1: #2a78d6;  /* سری ۱: تولید / بسته‌بندی */
+    --s2: #eb6834;  /* سری ۲: ضایعات / پروسس بیشتر */
+    --ink: #141c2b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Vazirmatn", "Segoe UI", Tahoma, "Noto Naskh Arabic", Arial, sans-serif;
+    font-size: 16px; line-height: 1.6; padding-bottom: 92px;
+  }
+  header {
+    background: var(--brand); color: #fff; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    position: sticky; top: 0; z-index: 5;
+  }
+  header h1 { font-size: 18px; margin: 0; font-weight: 700; }
+  .lang { display: flex; background: rgba(255,255,255,.18); border-radius: 10px; overflow: hidden; }
+  .lang button { background: none; border: 0; color: #fff; padding: 8px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+  .lang button.on { background: #fff; color: var(--brand-dark); font-weight: 700; }
+  main { max-width: 1000px; margin: 0 auto; padding: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 14px; min-width: 0; }
+  .card h2 { font-size: 15px; margin: 0 0 4px; color: var(--brand-dark); }
+  .card .hint { font-size: 12.5px; color: var(--muted); margin: 0 0 10px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  select, input {
+    width: 100%; font: inherit; font-size: 16px; padding: 11px; border: 1px solid var(--line);
+    border-radius: 10px; background: #fff; color: var(--text);
+  }
+  select:focus, input:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field { margin-bottom: 10px; }
+  .primary, .secondary {
+    border-radius: 12px; font: inherit; font-size: 16px; font-weight: 700; padding: 12px; cursor: pointer; width: 100%;
+  }
+  .primary { background: var(--brand); color: #fff; border: 0; }
+  .primary:active { background: var(--brand-dark); }
+  .primary:disabled { opacity: .6; }
+  .secondary { background: #fff; color: var(--brand-dark); border: 1px solid var(--brand); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 12px; }
+  .chip { font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--text); cursor: pointer; }
+  .chip:active { background: #eef2ff; }
+  .who { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding: 10px 14px; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; }
+  .who button { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--brand); background: #fff; color: var(--brand-dark); cursor: pointer; }
+
+  /* فیلترها (تاشو) */
+  details.filters { background: var(--card); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 14px; }
+  details.filters > summary { list-style: none; cursor: pointer; padding: 12px 14px; font-weight: 700; color: var(--brand-dark); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  details.filters > summary::-webkit-details-marker { display: none; }
+  details.filters > summary small { font-weight: 400; color: var(--muted); font-size: 13px; }
+  details.filters > summary::after { content: "▾"; color: var(--muted); }
+  details.filters[open] > summary::after { content: "▴"; }
+  details.filters .body { padding: 0 14px 14px; }
+
+  /* KPI */
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; border-inline-start: 4px solid var(--s1); }
+  .kpi.w { border-inline-start-color: var(--s2); }
+  .kpi.n { border-inline-start-color: #94a3b8; }
+  .kpi span.l { display: block; font-size: 13px; color: var(--muted); }
+  .kpi b { display: block; font-size: 25px; line-height: 1.35; }
+  .kpi .d { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+  .kpi .d.good { color: var(--ok); } .kpi .d.bad { color: var(--err); }
+  @media (min-width: 760px) { .kpis { grid-template-columns: repeat(4, 1fr); } .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .g2 > .card { margin-bottom: 14px; } }
+
+  /* نمودارها */
+  .chart { width: 100%; position: relative; touch-action: pan-y; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-inline-end: 6px; vertical-align: -1px; }
+  .legend i.ln { height: 3px; border-radius: 2px; vertical-align: 3px; width: 16px; }
+  .hb { padding: 6px 0; }
+  .hb .top { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+  .hb .top .l { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .hb .top .v { white-space: nowrap; font-variant-numeric: tabular-nums; display: flex; gap: 8px; align-items: baseline; }
+  .hb .top .v em { font-style: normal; color: var(--muted); font-size: 12.5px; }
+  .hb .track { height: 10px; background: #e8edf8; border-radius: 5px; margin-top: 4px; overflow: hidden; }
+  .hb .track i { display: block; height: 100%; border-radius: 5px; background: var(--s1); }
+  .hb .track i.o { background: var(--s2); }
+  .hb[data-tip]:hover .track { outline: 2px solid #c7d2fe; }
+  .dv { display: grid; grid-template-columns: minmax(80px, 34%) 1fr 64px; gap: 8px; align-items: center; padding: 5px 0; font-size: 13.5px; }
+  .dv .n { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  .dv .t { position: relative; height: 16px; direction: ltr; }
+  .dv .t::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: #94a3b8; }
+  .dv .t i { position: absolute; top: 2px; height: 12px; border-radius: 4px; }
+  .dv .vv { text-align: end; font-variant-numeric: tabular-nums; font-weight: 700; }
+  table.tb { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.tb th { text-align: start; font-weight: 600; color: var(--muted); font-size: 12.5px; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  table.tb td { padding: 7px 4px; border-bottom: 1px dashed var(--line); font-variant-numeric: tabular-nums; }
+  table.tb td.nm { font-weight: 600; }
+  table.tb .num { text-align: end; white-space: nowrap; }
+  .tbwrap { overflow-x: auto; }
+  table.hm { border-collapse: separate; border-spacing: 3px; width: 100%; font-size: 13px; }
+  table.hm th { font-weight: 600; color: var(--muted); font-size: 12.5px; padding: 4px; }
+  table.hm td.c { text-align: center; padding: 10px 4px; border-radius: 8px; font-variant-numeric: tabular-nums; font-weight: 600; }
+  table.hm td.nm { font-weight: 600; white-space: nowrap; padding-inline-end: 6px; }
+  .ins { display: grid; gap: 8px; }
+  .ins div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; background: #f6f8fc; border-radius: 10px; font-size: 14px; }
+  .ins div span:first-child { color: var(--muted); }
+  .ins div b { text-align: end; }
+  .chiprow { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; font-weight: 700; }
+  .chiprow.eq { background: #dcfce7; color: #166534; } .chiprow.po { background: #ffedd5; color: #9a3412; } .chiprow.pk { background: #dbeafe; color: #1e40af; }
+
+  .row { padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .rep { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: #fff; }
+  .rep .h { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; font-weight: 700; font-size: 15px; }
+  .rep .h small { font-weight: 400; color: var(--muted); font-size: 13px; }
+  .rep .sub { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+  .rep .it { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; padding: 3px 0; }
+  .rep .it .n { white-space: nowrap; }
+  .rep .it .n .w { color: var(--waste); margin-inline-start: 10px; font-size: 13px; }
+  .rep .note { margin-top: 6px; font-size: 14px; color: var(--muted); background: #f6f8fc; border-radius: 8px; padding: 6px 10px; }
+  .empty { text-align: center; color: var(--muted); padding: 24px 8px; }
+  .notice { font-size: 13px; color: var(--warn); background: #fff7ed; border: 1px solid #fed7aa; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; }
+  .setup { display: none; font-size: 13px; background: #fef2f2; border: 1px solid #fecaca; color: var(--err); padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; }
+  .toast {
+    position: fixed; top: 70px; inset-inline: 14px; max-width: 972px; margin: 0 auto; z-index: 10;
+    padding: 12px 14px; border-radius: 12px; color: #fff; font-weight: 600; display: none;
+  }
+  .toast.ok { background: var(--ok); } .toast.err { background: var(--err); } .toast.warn { background: var(--warn); }
+  .hidden { display: none !important; }
+  bdi { unicode-bidi: isolate; }
+  .busy .view { opacity: .55; transition: opacity .15s; }
+
+  /* منوی پایین */
+  nav.bar {
+    position: fixed; bottom: 0; inset-inline: 0; z-index: 6; background: #fff; border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(6, 1fr); padding: 6px 2px calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 10px rgba(20,28,43,.06);
+  }
+  nav.bar button {
+    background: none; border: 0; font: inherit; font-size: 11px; color: var(--muted); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; border-radius: 10px;
+  }
+  nav.bar button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  nav.bar button.on { color: var(--brand); font-weight: 700; background: #eef2ff; }
+  @media (min-width: 760px) { nav.bar { max-width: 640px; margin: 0 auto; border: 1px solid var(--line); border-radius: 16px 16px 0 0; } }
+
+  #tip {
+    position: fixed; z-index: 20; pointer-events: none; display: none; background: #141c2b; color: #fff;
+    border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.5; max-width: 260px; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  }
+  #tip .tt { font-weight: 700; margin-bottom: 2px; }
+  #tip .tr { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  #tip .tr b { margin-inline-start: 10px; font-variant-numeric: tabular-nums; }
+  #tip .tr i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-inline-end: 6px; vertical-align: 3px; }
+  #tip .tr span { color: #d6dbe7; }
+  #tip .pl { white-space: pre-line; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="t_title"></h1>
+  <div class="lang" role="group" aria-label="language">
+    <button id="btn_fa" type="button">فارسی</button>
+    <button id="btn_ar" type="button">العربية</button>
+  </div>
+</header>
+<div id="toast" class="toast" role="status"></div>
+<div id="tip" role="tooltip"></div>
+
+<main>
+  <div id="setup" class="setup"></div>
+
+  <!-- ورود / الدخول -->
+  <section id="loginView" class="hidden" style="max-width:520px;margin:0 auto">
+    <div class="card">
+      <h2 id="t_login"></h2>
+      <div class="field">
+        <label for="lname" id="l_lname"></label>
+        <select id="lname"></select>
+      </div>
+      <div class="field">
+        <label for="lpass" id="l_lpass"></label>
+        <input id="lpass" type="password" autocomplete="current-password">
+      </div>
+      <button id="loginBtn" class="primary" type="button"></button>
+    </div>
+  </section>
+
+  <!-- برنامه / التطبيق -->
+  <section id="appView" class="hidden">
+    <div class="who">
+      <span><span id="l_who"></span> <b id="whoName"></b></span>
+      <button id="logout" type="button"></button>
+    </div>
+
+    <details class="filters" id="fbox">
+      <summary><span id="t_filters"></span><small id="rangeNote"></small></summary>
+      <div class="body">
+        <div class="chips">
+          <button class="chip" type="button" id="c0"></button>
+          <button class="chip" type="button" id="c7"></button>
+          <button class="chip" type="button" id="c30"></button>
+          <button class="chip" type="button" id="c90"></button>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="from" id="l_from"></label><input id="from" type="date"></div>
+          <div class="field"><label for="to" id="l_to"></label><input id="to" type="date"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="fsup" id="l_fsup"></label><select id="fsup"></select></div>
+          <div class="field"><label for="fline" id="l_fline"></label><select id="fline"></select></div>
+          <div class="field"><label for="fshift" id="l_fshift"></label><select id="fshift"></select></div>
+          <div class="field"><label for="fprod" id="l_fprod"></label><select id="fprod"></select></div>
+        </div>
+        <button id="showBtn" class="primary" type="button"></button>
+      </div>
+    </details>
+
+    <div id="truncNotice" class="notice hidden"></div>
+
+    <div id="views">
+      <div id="v_dash" class="view"></div>
+      <div id="v_prod" class="view hidden"></div>
+      <div id="v_perf" class="view hidden"></div>
+      <div id="v_stops" class="view hidden"></div>
+      <div id="v_dev" class="view hidden"></div>
+      <div id="v_list" class="view hidden"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bar hidden" id="nav" aria-label="menu"></nav>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  var C = window.MANAGER_CONFIG;
+  var T = {
+    fa: {
+      kPresent: "جمع نفرات حاضر", kAbsent: "جمع غایبین", kAbsRate: "نرخ غیبت", kPer: "تولید سرانه (هر نفر حاضر)", unitShiftPerson: "نفر-شیفت",
+      cAtt: "حضور و غیاب روزانه", sPresent: "حاضر", sAbsent: "غایب", cAttBy: "حضور، غیبت و تولید سرانه", attNote: "فقط گزارش‌هایی که حضور و غیاب دارند حساب می‌شوند.",
+      thName: "نام", thPresent: "حاضر", thAbsent: "غایب", thAbsRate: "غیبت", thPer: "سرانه", byShiftT: "به تفکیک شیفت", bySupT: "به تفکیک سرپرست", byLineT: "به تفکیک خط",
+      csvHeadAtt: ["حاضر", "غایب"],
+      nStops: "توقفات", kStopMin: "جمع توقف (دقیقه)", kStopCnt: "تعداد توقف", kStopAvg: "میانگین هر توقف (دقیقه)", kStopPer: "توقف هر گزارش (دقیقه)",
+      cStopDaily: "توقف روزانه (دقیقه)", sStop: "مدت توقف", cStopReason: "علت توقفات (پارتو)", cStopLine: "توقف به تفکیک خط", cStopShift: "توقف به تفکیک شیفت", cStopSup: "توقف به تفکیک سرپرست",
+      cStopList: "فهرست توقفات", stopEmpty: "توقفی در این بازه ثبت نشده است.", unitMin: "دقیقه", hAnd: "ساعت و", hUnit: "ساعت", cntUnit: "مورد", stopsDash: "توقفات",
+      stopHead: ["تاریخ", "زمان ثبت", "سرپرست", "خط", "شیفت", "علت", "مدت (دقیقه)", "توضیحات"], csvStops: "دانلود توقفات (CSV)", thReason: "علت", thMin: "دقیقه", thWhen: "تاریخ / خط / شیفت",
+      title: "پنل مدیر تولید", login: "ورود مدیر", lname: "نام", lpass: "رمز عبور", loginBtn: "ورود", logging: "در حال بررسی…",
+      choose: "انتخاب کنید", who: "مدیر:", logout: "خروج",
+      filters: "فیلترها و بازه زمانی", from: "از تاریخ", to: "تا تاریخ", today: "امروز", d7: "۷ روز", d30: "۳۰ روز", d90: "۹۰ روز",
+      show: "نمایش گزارش", loading: "در حال دریافت…", all: "همه",
+      fSup: "سرپرست", fLine: "خط", fShift: "شیفت", fProd: "محصول",
+      nDash: "داشبورد", nProd: "محصولات", nPerf: "عملکرد", nDev: "انحراف", nList: "گزارش‌ها",
+      kProd: "جمع تولید", kWaste: "جمع ضایعات", waste: "ضایعات", kRate: "نسبت ضایعات", kReports: "تعداد گزارش‌ها", kAvg: "میانگین روزانه",
+      vsPrev: "نسبت به دوره قبل", noPrev: "دوره قبل: بدون داده",
+      cDaily: "تولید روزانه", cDailyHint: "ستون‌ها تولید هر روز و خط تیره میانگین ۷ روزه است.", sDaily: "تولید روزانه", sMA: "میانگین ۷ روزه",
+      cRate: "نسبت ضایعات روزانه (٪)", sRate: "نسبت ضایعات",
+      cTop: "پرتولیدترین محصولات", cShiftShare: "سهم شیفت‌ها از تولید", cInsights: "نکات کلیدی",
+      iBestDay: "بیشترین تولید در یک روز", iWorstWaste: "بیشترین نسبت ضایعات (روز)", iTopProd: "پرتولیدترین محصول", iActive: "روزهای دارای گزارش", iTopWasteProd: "بیشترین ضایعات (محصول)",
+      cProdAll: "تولید به تفکیک محصول", cProdWaste: "نسبت ضایعات هر محصول", cProdTable: "جدول محصولات",
+      thProd: "محصول", thQty: "تولید", thWaste: "ضایعات", thRate: "نسبت",
+      cSup: "تولید به تفکیک سرپرست", cLine: "تولید به تفکیک خط", cShift: "تولید به تفکیک شیفت",
+      cHeat: "ماتریس خط × شیفت", cHeatHint: "هرچه رنگ تیره‌تر باشد تولید بیشتر است.", cWeek: "میانگین تولید بر اساس روز هفته",
+      days: ["یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه"],
+      devIntro: "انحراف = تولید پروسس − تولید بسته‌بندی. فیلتر محصول اعمال می‌شود؛ بقیه‌ی فیلترها برای انحراف کاربرد ندارند.",
+      kProc: "جمع پروسس", kPack: "جمع بسته‌بندی", kDev: "انحراف کل", kDevPct: "درصد انحراف",
+      cDevProd: "انحراف هر محصول", cDevDay: "انحراف روزانه", cDevTable: "جدول انحراف",
+      dvPos: "پروسس بیشتر", dvNeg: "بسته‌بندی بیشتر", dvEq: "مطابق", thProc: "پروسس", thPack: "بسته‌بندی", thDev: "انحراف",
+      devLong: "برای انحراف حداکثر ۹۳ روز مجاز است. بازه را کوتاه‌تر کنید.", devEmpty: "ثبت پروسسی در این بازه نیست.", devLoading: "در حال دریافت انحراف…",
+      empty: "گزارشی در این بازه و با این فیلترها پیدا نشد.", submitted: "ثبت:", notes: "توضیحات:",
+      truncated: "تعداد نتایج زیاد است و فقط جدیدترین‌ها نمایش داده می‌شود. بازه را کوتاه‌تر کنید.",
+      csv: "دانلود Excel (CSV)", csvEmpty: "گزارشی برای دانلود نیست.",
+      csvHead: ["تاریخ", "زمان ثبت", "سرپرست", "خط", "شیفت", "محصول", "تعداد تولید", "ضایعات", "توضیحات"],
+      noUrl: "آدرس سرور (SCRIPT_URL) در config.js تنظیم نشده است.",
+      errLoginFields: "نام و رمز عبور را وارد کنید.", errBad: "رمز عبور اشتباه است.",
+      errLocked: "به‌دلیل چند تلاش ناموفق، ورود این حساب تا ۱۰ دقیقه بسته شد.",
+      errNoUser: "این حساب روی سرور تعریف نشده است (کد Apps Script قدیمی است یا شناسه حساب با config.js یکی نیست).", errNotConf: "رمز این حساب هنوز روی سرور تنظیم نشده است.",
+      errNotManager: "این حساب مدیر نیست.",
+      errNet: "ارتباط با سرور برقرار نشد (اینترنت یا آدرس SCRIPT_URL را بررسی کنید).",
+      errExpired: "نشست شما تمام شده؛ دوباره وارد شوید.",
+      errRange: "بازه‌ی تاریخ درست نیست.", pct: "٪"
+    },
+    ar: {
+      kPresent: "إجمالي الحاضرين", kAbsent: "إجمالي الغائبين", kAbsRate: "نسبة الغياب", kPer: "الإنتاج للفرد (لكل حاضر)", unitShiftPerson: "فرد-وردية",
+      cAtt: "الحضور والغياب اليومي", sPresent: "حاضر", sAbsent: "غائب", cAttBy: "الحضور والغياب والإنتاج للفرد", attNote: "تُحسب فقط التقارير التي فيها حضور وغياب.",
+      thName: "الاسم", thPresent: "حاضر", thAbsent: "غائب", thAbsRate: "الغياب", thPer: "للفرد", byShiftT: "حسب الوردية", bySupT: "حسب المشرف", byLineT: "حسب الخط",
+      csvHeadAtt: ["حاضر", "غائب"],
+      nStops: "التوقفات", kStopMin: "إجمالي التوقف (دقيقة)", kStopCnt: "عدد التوقفات", kStopAvg: "متوسط التوقف (دقيقة)", kStopPer: "توقف لكل تقرير (دقيقة)",
+      cStopDaily: "التوقف اليومي (دقيقة)", sStop: "مدة التوقف", cStopReason: "أسباب التوقف (باريتو)", cStopLine: "التوقف حسب الخط", cStopShift: "التوقف حسب الوردية", cStopSup: "التوقف حسب المشرف",
+      cStopList: "قائمة التوقفات", stopEmpty: "لا توجد توقفات مسجلة في هذه الفترة.", unitMin: "دقيقة", hAnd: "ساعة و", hUnit: "ساعة", cntUnit: "مرة", stopsDash: "التوقفات",
+      stopHead: ["التاريخ", "وقت التسجيل", "المشرف", "الخط", "الوردية", "السبب", "المدة (دقيقة)", "ملاحظات"], csvStops: "تنزيل التوقفات (CSV)", thReason: "السبب", thMin: "دقيقة", thWhen: "التاريخ / الخط / الوردية",
+      title: "لوحة مدير الإنتاج", login: "دخول المدير", lname: "الاسم", lpass: "كلمة المرور", loginBtn: "دخول", logging: "جارٍ التحقق…",
+      choose: "اختر", who: "المدير:", logout: "خروج",
+      filters: "المرشحات والفترة الزمنية", from: "من تاريخ", to: "إلى تاريخ", today: "اليوم", d7: "7 أيام", d30: "30 يومًا", d90: "90 يومًا",
+      show: "عرض التقرير", loading: "جارٍ التحميل…", all: "الكل",
+      fSup: "المشرف", fLine: "الخط", fShift: "الوردية", fProd: "المنتج",
+      nDash: "اللوحة", nProd: "المنتجات", nPerf: "الأداء", nDev: "الانحراف", nList: "التقارير",
+      kProd: "إجمالي الإنتاج", kWaste: "إجمالي الهدر", waste: "الهدر", kRate: "نسبة الهدر", kReports: "عدد التقارير", kAvg: "المعدل اليومي",
+      vsPrev: "مقارنة بالفترة السابقة", noPrev: "الفترة السابقة: بلا بيانات",
+      cDaily: "الإنتاج اليومي", cDailyHint: "الأعمدة إنتاج كل يوم والخط المتقطع متوسط 7 أيام.", sDaily: "الإنتاج اليومي", sMA: "متوسط 7 أيام",
+      cRate: "نسبة الهدر اليومية (٪)", sRate: "نسبة الهدر",
+      cTop: "أعلى المنتجات إنتاجًا", cShiftShare: "حصة الورديات من الإنتاج", cInsights: "أبرز النقاط",
+      iBestDay: "أعلى إنتاج في يوم", iWorstWaste: "أعلى نسبة هدر (يوم)", iTopProd: "أكثر منتج إنتاجًا", iActive: "أيام فيها تقارير", iTopWasteProd: "أعلى هدر (منتج)",
+      cProdAll: "الإنتاج حسب المنتج", cProdWaste: "نسبة الهدر لكل منتج", cProdTable: "جدول المنتجات",
+      thProd: "المنتج", thQty: "الإنتاج", thWaste: "الهدر", thRate: "النسبة",
+      cSup: "الإنتاج حسب المشرف", cLine: "الإنتاج حسب الخط", cShift: "الإنتاج حسب الوردية",
+      cHeat: "مصفوفة الخط × الوردية", cHeatHint: "كلما كان اللون أغمق كان الإنتاج أكبر.", cWeek: "متوسط الإنتاج حسب يوم الأسبوع",
+      days: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
+      devIntro: "الانحراف = إنتاج العمليات − إنتاج التعبئة. يُطبّق مرشح المنتج فقط؛ بقية المرشحات لا تخص الانحراف.",
+      kProc: "إجمالي العمليات", kPack: "إجمالي التعبئة", kDev: "الانحراف الكلي", kDevPct: "نسبة الانحراف",
+      cDevProd: "انحراف كل منتج", cDevDay: "الانحراف اليومي", cDevTable: "جدول الانحراف",
+      dvPos: "العمليات أكثر", dvNeg: "التعبئة أكثر", dvEq: "مطابق", thProc: "العمليات", thPack: "التعبئة", thDev: "الانحراف",
+      devLong: "الحد الأقصى للانحراف 93 يومًا. قلّل الفترة.", devEmpty: "لا يوجد تسجيل عمليات في هذه الفترة.", devLoading: "جارٍ تحميل الانحراف…",
+      empty: "لا توجد تقارير في هذه الفترة وبهذه المرشحات.", submitted: "سُجّل:", notes: "ملاحظات:",
+      truncated: "عدد النتائج كبير؛ تم عرض الأحدث فقط. قلّل الفترة الزمنية.",
+      csv: "تنزيل Excel (CSV)", csvEmpty: "لا توجد تقارير للتنزيل.",
+      csvHead: ["التاريخ", "وقت التسجيل", "المشرف", "الخط", "الوردية", "المنتج", "الكمية المنتجة", "الهدر", "ملاحظات"],
+      noUrl: "لم يتم ضبط رابط الخادم (SCRIPT_URL) في config.js.",
+      errLoginFields: "أدخل الاسم وكلمة المرور.", errBad: "كلمة المرور غير صحيحة.",
+      errLocked: "تم إيقاف دخول هذا الحساب 10 دقائق بسبب محاولات فاشلة.",
+      errNoUser: "هذا الحساب غير معرّف على الخادم (كود Apps Script قديم أو المعرّف لا يطابق config.js).", errNotConf: "لم يتم ضبط كلمة مرور هذا الحساب على الخادم بعد.",
+      errNotManager: "هذا الحساب ليس حساب مدير.",
+      errNet: "تعذر الاتصال بالخادم (تحقق من الإنترنت أو رابط SCRIPT_URL).",
+      errExpired: "انتهت الجلسة؛ سجّل الدخول مجددًا.",
+      errRange: "الفترة الزمنية غير صحيحة.", pct: "٪"
+    }
+  };
+  var lang = "fa";
+  try { lang = localStorage.getItem("lang") || "fa"; } catch (e) {}
+  if (!T[lang]) lang = "fa";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var SKEY = "mgr_session";
+  var state = {
+    rows: [], prev: null, stops: [], prevStops: null, truncated: false, f: { sup: "", line: "", shift: "", product: "" },
+    view: "dash", loaded: false,
+    dev: { key: "", state: "idle", pack: [], proc: [], err: "" }
+  };
+  var FIELDS = [["fsup", "sup", "fSup"], ["fline", "line", "fLine"], ["fshift", "shift", "fShift"], ["fprod", "product", "fProd"]];
+  var VIEWS = [
+    ["dash", "nDash", '<path d="M4 13h6V4H4zM14 20h6V4h-6zM4 20h6v-3H4z"/>'],
+    ["prod", "nProd", '<path d="M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8"/>'],
+    ["perf", "nPerf", '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'],
+    ["stops", "nStops", '<path d="M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l3 2"/>'],
+    ["dev", "nDev", '<path d="M12 3v18M6 8l6-5 6 5M6 16l6 5 6-5"/>'],
+    ["list", "nList", '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>']
+  ];
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function num(n, digits) {
+    return Number(n).toLocaleString(lang === "fa" ? "fa-IR" : "ar-IQ", digits == null ? { maximumFractionDigits: 0 } : { maximumFractionDigits: digits, minimumFractionDigits: digits });
+  }
+  function signed(n) { return (n > 0 ? "+" : n < 0 ? "−" : "") + num(Math.abs(n)); }
+  function lab(r, f) {
+    if (f === "date") return r.date;
+    return lang === "ar" ? (r[f + "Ar"] || r[f]) : r[f];
+  }
+  function repKey(r) { return r.id || (r.t + "|" + r.sup + "|" + r.line); }
+  function attr(s) { return esc(s); }
+
+  /* ---------- نشست و ارتباط ---------- */
+  function getSession() { try { return JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { return null; } }
+  function setSession(s) { try { if (s) localStorage.setItem(SKEY, JSON.stringify(s)); else localStorage.removeItem(SKEY); } catch (e) {} }
+  function api(payload) {
+    return fetch(C.SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); });
+  }
+  function toast(msg, kind) {
+    var el = $("toast"); el.textContent = msg; el.className = "toast " + kind; el.style.display = "block";
+    clearTimeout(toast._t); toast._t = setTimeout(function () { el.style.display = "none"; }, 4500);
+  }
+
+  /* ---------- تاریخ ---------- */
+  function iso(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function setRange(daysBack) {
+    var to = new Date(), from = new Date();
+    from.setDate(from.getDate() - daysBack);
+    $("from").value = iso(from); $("to").value = iso(to);
+  }
+  function parseISO(s) { var p = s.split("-"); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
+  function fmtISO(d) { return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0"); }
+  function addDays(s, n) { var d = parseISO(s); d.setUTCDate(d.getUTCDate() + n); return fmtISO(d); }
+  function diffDays(a, b) { return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
+  function dayList(from, to) { var out = [], n = diffDays(from, to); for (var i = 0; i <= n; i++) out.push(addDays(from, i)); return out; }
+  function shortDate(s) { var p = s.split("-"); return num(+p[1]) + "/" + num(+p[2]); }
+  function weekday(s) { return parseISO(s).getUTCDay(); }
+
+  /* ---------- تجمیع ---------- */
+  function filtered() {
+    var f = state.f;
+    return state.rows.filter(function (r) { return passF(r, f); });
+  }
+  function passF(r, f) {
+    return (!f.sup || r.sup === f.sup) && (!f.line || r.line === f.line) &&
+      (!f.shift || r.shift === f.shift) && (!f.product || r.product === f.product);
+  }
+  function group(rows, field) {
+    var m = {}, order = [];
+    rows.forEach(function (r) {
+      var k = r[field];
+      if (!m[k]) { m[k] = { key: k, label: lab(r, field), qty: 0, waste: 0 }; order.push(k); }
+      m[k].qty += r.qty; m[k].waste += r.waste;
+    });
+    return order.map(function (k) { return m[k]; });
+  }
+  function totals(rows) {
+    var qty = 0, waste = 0, keys = {}, nrep = 0;
+    rows.forEach(function (r) {
+      qty += r.qty; waste += r.waste;
+      var k = repKey(r); if (!keys[k]) { keys[k] = 1; nrep++; }
+    });
+    return { qty: qty, waste: waste, rate: qty > 0 ? waste / qty * 100 : 0, nrep: nrep };
+  }
+  function rate(x) { return x.qty > 0 ? x.waste / x.qty * 100 : 0; }
+
+  function buildFilterOptions() {
+    FIELDS.forEach(function (d) {
+      var el = $(d[0]), seen = {}, list = [];
+      state.rows.forEach(function (r) {
+        var k = r[d[1]];
+        if (k && !seen[k]) { seen[k] = true; list.push({ k: k, l: lab(r, d[1]) }); }
+      });
+      list.sort(function (a, b) { return a.l.localeCompare(b.l); });
+      var cur = state.f[d[1]];
+      if (cur && !seen[cur]) { cur = ""; state.f[d[1]] = ""; }
+      el.innerHTML = '<option value="">' + esc(T[lang].all) + '</option>' +
+        list.map(function (x) { return '<option value="' + attr(x.k) + '">' + esc(x.l) + '</option>'; }).join("");
+      el.value = cur;
+    });
+  }
+
+  /* ---------- راهنمای نمودار (tooltip) ---------- */
+  var tip = $("tip");
+  function tipShow(x, y, title, rows, plain) {
+    tip.textContent = "";
+    if (plain != null) {
+      var p = document.createElement("div"); p.className = "pl"; p.textContent = plain; tip.appendChild(p);
+    } else {
+      if (title) { var t = document.createElement("div"); t.className = "tt"; t.textContent = title; tip.appendChild(t); }
+      rows.forEach(function (r) {
+        var d = document.createElement("div"); d.className = "tr";
+        var l = document.createElement("span");
+        if (r.color) { var k = document.createElement("i"); k.style.background = r.color; l.appendChild(k); }
+        l.appendChild(document.createTextNode(r.name));
+        var v = document.createElement("b"); v.textContent = r.value;
+        d.appendChild(l); d.appendChild(v); tip.appendChild(d);
+      });
+    }
+    tip.style.display = "block";
+    var w = tip.offsetWidth, h = tip.offsetHeight, vw = window.innerWidth;
+    var left = x + 14; if (left + w > vw - 6) left = x - w - 14; if (left < 6) left = 6;
+    var top = y - h - 12; if (top < 6) top = y + 18;
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }
+  function tipHide() { tip.style.display = "none"; }
+  document.addEventListener("pointermove", function (e) {
+    var el = e.target && e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (el) tipShow(e.clientX, e.clientY, null, null, el.getAttribute("data-tip")); else if (!e.target.closest || !e.target.closest(".chart")) tipHide();
+  });
+  document.addEventListener("pointerdown", function (e) {
+    if (!e.target.closest || (!e.target.closest("[data-tip]") && !e.target.closest(".chart"))) tipHide();
+  });
+  window.addEventListener("scroll", tipHide, { passive: true });
+
+  /* ---------- نمودار ستونی/خطی SVG ---------- */
+  function niceStep(raw) {
+    var p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  }
+  function compact(v) {
+    var a = Math.abs(v);
+    if (a >= 1e6) return num(v / 1e6, 1) + "M";
+    if (a >= 1e3) return num(v / 1e3, a >= 1e4 ? 0 : 1) + "k";
+    return num(v, a < 10 && a % 1 ? 1 : 0);
+  }
+  var NS = "http://www.w3.org/2000/svg";
+  function mk(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  /* o: { labels, bars:{name,vals,color,neg}, line:{name,vals,color,dash}, yfmt, h, dates } */
+  function xyChart(host, o) {
+    host.textContent = "";
+    var W = Math.max(280, host.clientWidth || 320), H = o.h || 210;
+    var ml = 44, mr = 8, mt = 10, mb = 26, n = o.labels.length;
+    var vals = [];
+    [o.bars, o.line].forEach(function (s) { if (s) s.vals.forEach(function (v) { if (v != null) vals.push(v); }); });
+    var max = Math.max.apply(null, vals.concat([0])), min = Math.min.apply(null, vals.concat([0]));
+    if (max === min) max = min + 1;
+    var step = niceStep((max - min) / 4), lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step;
+    var pw = W - ml - mr, ph = H - mt - mb, bw = pw / n;
+    function X(i) { return ml + (i + .5) * bw; }
+    function Y(v) { return mt + (hi - v) / (hi - lo) * ph; }
+    var fmt = o.yfmt || compact;
+    var svg = mk("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": o.aria || "" }, host);
+    svg.style.direction = "ltr";
+    for (var t = lo; t <= hi + step / 1000; t += step) {
+      mk("line", { x1: ml, x2: W - mr, y1: Y(t), y2: Y(t), stroke: t === 0 && lo < 0 ? "#94a3b8" : "#e6eaf3", "stroke-width": 1 }, svg);
+      var tx = mk("text", { x: ml - 6, y: Y(t) + 4, "text-anchor": "end", "font-size": 11, fill: "#5a6780" }, svg);
+      tx.textContent = fmt(t);
+    }
+    var every = o.allLabels ? 1 : Math.max(1, Math.ceil(n / Math.max(2, Math.floor(pw / 52))));
+    for (var i = 0; i < n; i += every) {
+      var lx = mk("text", { x: X(i), y: H - 7, "text-anchor": "middle", "font-size": o.allLabels ? 10 : 11, fill: "#5a6780" }, svg);
+      lx.textContent = o.labels[i];
+    }
+    var base = Y(0);
+    if (o.bars) {
+      var w = Math.max(2, Math.min(30, bw * .72)), r = Math.min(4, w / 2);
+      o.bars.vals.forEach(function (v, i) {
+        if (v == null || v === 0) return;
+        var x0 = X(i) - w / 2, x1 = x0 + w, yv = Y(v), neg = v < 0;
+        var d = neg
+          ? "M" + x0 + " " + base + "H" + x1 + "V" + (yv - r) + "Q" + x1 + " " + yv + " " + (x1 - r) + " " + yv + "H" + (x0 + r) + "Q" + x0 + " " + yv + " " + x0 + " " + (yv - r) + "Z"
+          : "M" + x0 + " " + base + "V" + (yv + r) + "Q" + x0 + " " + yv + " " + (x0 + r) + " " + yv + "H" + (x1 - r) + "Q" + x1 + " " + yv + " " + x1 + " " + (yv + r) + "V" + base + "Z";
+        mk("path", { d: d, fill: neg && o.bars.neg ? o.bars.neg : o.bars.color, "data-i": i }, svg);
+      });
+    }
+    if (o.line) {
+      var seg = [], segs = [];
+      o.line.vals.forEach(function (v, i) {
+        if (v == null) { if (seg.length) segs.push(seg); seg = []; } else seg.push([X(i), Y(v)]);
+      });
+      if (seg.length) segs.push(seg);
+      segs.forEach(function (s) {
+        if (s.length < 2) return;
+        var p = mk("polyline", { points: s.map(function (q) { return q[0] + "," + q[1]; }).join(" "), fill: "none", stroke: o.line.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+        if (o.line.dash) p.setAttribute("stroke-dasharray", "5 4");
+      });
+      if (n <= 31 && !o.line.dash) {
+        o.line.vals.forEach(function (v, i) {
+          if (v == null) return;
+          mk("circle", { cx: X(i), cy: Y(v), r: 4, fill: o.line.color, stroke: "#fff", "stroke-width": 2 }, svg);
+        });
+      }
+    }
+    var cross = mk("line", { y1: mt, y2: H - mb, stroke: "#94a3b8", "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" }, svg);
+    var hit = mk("rect", { x: ml, y: 0, width: pw, height: H, fill: "transparent" }, svg);
+    host.style.position = "relative";
+    function at(e) {
+      var rc = svg.getBoundingClientRect(), sx = (e.clientX - rc.left) * (W / rc.width);
+      var i = Math.max(0, Math.min(n - 1, Math.floor((sx - ml) / bw)));
+      cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("visibility", "visible");
+      var rows = [];
+      if (o.bars && o.bars.vals[i] != null) rows.push({ color: o.bars.color, name: o.bars.name, value: o.tipfmt ? o.tipfmt(o.bars.vals[i]) : num(o.bars.vals[i]) });
+      if (o.line && o.line.vals[i] != null) rows.push({ color: o.line.color, name: o.line.name, value: o.tipfmt2 ? o.tipfmt2(o.line.vals[i]) : (o.tipfmt ? o.tipfmt(o.line.vals[i]) : num(o.line.vals[i])) });
+      tipShow(e.clientX, e.clientY, o.dates ? o.dates[i] : o.labels[i], rows);
+    }
+    hit.addEventListener("pointermove", at); hit.addEventListener("pointerdown", at);
+    hit.addEventListener("pointerleave", function () { cross.setAttribute("visibility", "hidden"); tipHide(); });
+  }
+
+  /* ---------- اجزای HTML ---------- */
+  function legend(items) {
+    return '<div class="legend">' + items.map(function (x) {
+      return '<span><i class="' + (x.line ? "ln" : "") + '" style="background:' + x.color + '"></i>' + esc(x.name) + '</span>';
+    }).join("") + '</div>';
+  }
+  function hbars(items, o) {
+    o = o || {};
+    var max = 0; items.forEach(function (x) { if (x.value > max) max = x.value; });
+    return items.map(function (x) {
+      var p = max > 0 ? Math.max(1.5, x.value / max * 100) : 0;
+      if (!x.value) p = 0;
+      return '<div class="hb" data-tip="' + attr(x.tip || (x.label + "\n" + x.text)) + '"><div class="top"><span class="l"><bdi>' + esc(x.label) + '</bdi></span>' +
+        '<span class="v"><bdi>' + esc(x.text) + '</bdi>' + (x.extra ? '<em><bdi>' + esc(x.extra) + '</bdi></em>' : '') + '</span></div>' +
+        '<div class="track"><i class="' + (o.orange ? "o" : "") + '" style="width:' + p + '%"></i></div></div>';
+    }).join("");
+  }
+  function qtyItems(list, t, withWaste) {
+    return list.map(function (x) {
+      return { label: x.label, value: x.qty, text: num(x.qty),
+        extra: withWaste && x.waste ? t.waste + " " + num(x.waste) : "",
+        tip: x.label + "\n" + t.kProd + ": " + num(x.qty) + "\n" + t.waste + ": " + num(x.waste) + " (" + num(rate(x), 1) + t.pct + ")" };
+    });
+  }
+  function card(title, body, hint, cls) {
+    return '<div class="card ' + (cls || "") + '"><h2>' + esc(title) + '</h2>' + (hint ? '<p class="hint">' + esc(hint) + '</p>' : '') + body + '</div>';
+  }
+  function chartHost(id) { return '<div class="chart" id="' + id + '"></div>'; }
+  function delta(cur, prev, bad, isRate) {
+    var t = T[lang];
+    if (!state.prev) return '<div class="d">&nbsp;</div>';
+    var pt = totals(state.prev.filter(function (r) { return passF(r, state.f); }));
+    var pv = isRate ? pt.rate : prev(pt);
+    if (!pt.nrep) return '<div class="d">' + esc(t.noPrev) + '</div>';
+    var ch, txt;
+    if (isRate) { ch = cur - pv; txt = (ch > 0 ? "▲ " : ch < 0 ? "▼ " : "") + num(Math.abs(ch), 1) + (lang === "fa" ? " واحد" : " نقطة"); }
+    else { if (!(pv > 0)) return '<div class="d">' + esc(t.noPrev) + '</div>'; ch = (cur - pv) / pv * 100; txt = (ch > 0 ? "▲ " : ch < 0 ? "▼ " : "") + num(Math.abs(ch), 1) + t.pct; }
+    var cls = Math.abs(ch) < 0.05 ? "" : ((ch > 0) === !bad ? "good" : "bad");
+    return '<div class="d ' + cls + '"><b style="display:inline;font-size:13.5px"><bdi>' + esc(txt) + '</bdi></b><br><span style="color:var(--muted)">' + esc(t.vsPrev) + '</span></div>';
+  }
+
+  /* ---------- حضور و غیاب ---------- */
+  // هر گزارش یک بار حساب می‌شود (حضور و غیاب روی همه‌ی ردیف‌های گزارش تکرار شده است)
+  function attReports(rows) {
+    var m = {}, out = [];
+    rows.forEach(function (r) {
+      var k = repKey(r);
+      if (!m[k]) { m[k] = { first: r, qty: 0 }; out.push(m[k]); }
+      m[k].qty += r.qty;
+    });
+    return out.filter(function (x) { return x.first.present != null && x.first.absent != null; });
+  }
+  function attTot(list) {
+    var P = 0, A = 0, Q = 0;
+    list.forEach(function (x) { P += x.first.present; A += x.first.absent; Q += x.qty; });
+    return { P: P, A: A, Q: Q, rate: P + A > 0 ? A / (P + A) * 100 : 0, per: P > 0 ? Q / P : 0, n: list.length };
+  }
+  function attGroup(list, field) {
+    var m = {}, order = [];
+    list.forEach(function (x) {
+      var r = x.first, k = r[field];
+      if (!m[k]) { m[k] = { label: lab(r, field), items: [] }; order.push(k); }
+      m[k].items.push(x);
+    });
+    return order.map(function (k) { var g = attTot(m[k].items); g.label = m[k].label; return g; }).sort(function (a, b) { return b.Q - a.Q; });
+  }
+
+  /* ---------- توقفات ---------- */
+  function passS(r) { var f = state.f; return (!f.sup || r.sup === f.sup) && (!f.line || r.line === f.line) && (!f.shift || r.shift === f.shift); }
+  function stopsFiltered() { return state.stops.filter(passS); }
+  function stopSum(list) { var m = 0; list.forEach(function (x) { m += x.minutes; }); return m; }
+  function hm(min) {
+    var t = T[lang];
+    if (min < 60) return num(min) + " " + t.unitMin;
+    var h = Math.floor(min / 60), r = min % 60;
+    return r ? num(h) + " " + t.hAnd + " " + num(r) + " " + t.unitMin : num(h) + " " + t.hUnit;
+  }
+  function stopGroup(list, field) {
+    var m = {}, order = [];
+    list.forEach(function (x) {
+      var k = x[field]; if (!m[k]) { m[k] = { label: lab(x, field), min: 0, n: 0 }; order.push(k); }
+      m[k].min += x.minutes; m[k].n++;
+    });
+    return order.map(function (k) { return m[k]; }).sort(function (a, b) { return b.min - a.min; });
+  }
+  function stopBars(list, field, total, limit) {
+    var t = T[lang], g = stopGroup(list, field);
+    if (limit) g = g.slice(0, limit);
+    return hbars(g.map(function (x) {
+      var share = total ? x.min / total * 100 : 0;
+      return { label: x.label, value: x.min, text: num(x.min) + " " + t.unitMin, extra: num(share, 1) + t.pct,
+        tip: x.label + "\n" + hm(x.min) + " (" + num(share, 1) + t.pct + ")\n" + num(x.n) + " " + t.cntUnit };
+    }), { orange: true });
+  }
+  function stopKpis(list, nrep) {
+    var t = T[lang], tot = stopSum(list), cnt = list.length;
+    var d = '<div class="d">&nbsp;</div>';
+    if (state.prevStops && state.prev) {
+      var pl = state.prevStops.filter(passS), pm = stopSum(pl);
+      if (pm > 0) {
+        var ch = (tot - pm) / pm * 100, cls = Math.abs(ch) < .05 ? "" : ch > 0 ? "bad" : "good";
+        d = '<div class="d ' + cls + '"><b style="display:inline;font-size:13.5px"><bdi>' + esc((ch > 0 ? "▲ " : ch < 0 ? "▼ " : "") + num(Math.abs(ch), 1) + t.pct) + '</bdi></b><br><span style="color:var(--muted)">' + esc(t.vsPrev) + '</span></div>';
+      } else d = '<div class="d">' + esc(t.noPrev) + '</div>';
+    }
+    return '<div class="kpis">' +
+      '<div class="kpi w"><span class="l">' + esc(t.kStopMin) + '</span><b>' + esc(num(tot)) + '</b>' + d + '</div>' +
+      '<div class="kpi w"><span class="l">' + esc(t.kStopCnt) + '</span><b>' + esc(num(cnt)) + '</b><div class="d"><bdi>' + esc(hm(tot)) + '</bdi></div></div>' +
+      '<div class="kpi n"><span class="l">' + esc(t.kStopAvg) + '</span><b>' + esc(num(cnt ? tot / cnt : 0, 1)) + '</b></div>' +
+      '<div class="kpi n"><span class="l">' + esc(t.kStopPer) + '</span><b>' + esc(num(nrep ? tot / nrep : 0, 1)) + '</b></div></div>';
+  }
+  function renderStops() {
+    var t = T[lang], el = $("v_stops"), list = stopsFiltered();
+    if (!list.length) { el.innerHTML = '<div class="empty">' + esc(t.stopEmpty) + '</div>'; return; }
+    var R = dateRange(), days = dayList(R.from, R.to), tot = stopSum(list);
+    var nrep = totals(filtered()).nrep;
+    var byDay = {}; list.forEach(function (x) { byDay[x.date] = (byDay[x.date] || 0) + x.minutes; });
+    var h = stopKpis(list, nrep);
+    h += card(t.cStopDaily, chartHost("ch_stop"));
+    h += '<div class="g2">' + card(t.cStopReason, stopBars(list, "reason", tot)) + card(t.cStopLine, stopBars(list, "line", tot)) + '</div>';
+    h += '<div class="g2">' + card(t.cStopShift, stopBars(list, "shift", tot)) + card(t.cStopSup, stopBars(list, "sup", tot)) + '</div>';
+    h += card(t.cStopList, '<div class="tbwrap"><table class="tb"><thead><tr><th>' + esc(t.thWhen) + '</th><th>' + esc(t.thReason) + '</th><th class="num">' + esc(t.thMin) + '</th></tr></thead><tbody>' +
+      list.slice(0, 60).map(function (x) {
+        return '<tr><td><bdi>' + esc(x.date) + '</bdi><br><small style="color:var(--muted)">' + esc(lab(x, "line")) + ' · ' + esc(lab(x, "shift")) + '</small></td><td class="nm"><bdi>' + esc(lab(x, "reason")) + '</bdi>' +
+          (x.note ? '<br><small style="color:var(--muted);font-weight:400">' + esc(x.note) + '</small>' : '') + '</td><td class="num">' + esc(num(x.minutes)) + '</td></tr>';
+      }).join("") + '</tbody></table></div><div style="height:10px"></div><button id="csvStops" class="secondary" type="button">' + esc(t.csvStops) + '</button>');
+    el.innerHTML = h;
+    xyChart($("ch_stop"), { labels: days.map(shortDate), dates: days, aria: t.cStopDaily, h: 200,
+      bars: { name: t.sStop, vals: days.map(function (d) { return byDay[d] || 0; }), color: "#eb6834" }, tipfmt: function (v) { return num(v) + " " + t.unitMin; } });
+    $("csvStops").onclick = exportStopsCsv;
+  }
+  function exportStopsCsv() {
+    var list = stopsFiltered();
+    if (!list.length) { toast(T[lang].csvEmpty, "warn"); return; }
+    var lines = [T[lang].stopHead.map(csvCell).join(",")];
+    list.forEach(function (x) { lines.push([x.date, x.t, lab(x, "sup"), lab(x, "line"), lab(x, "shift"), lab(x, "reason"), x.minutes, x.note].map(csvCell).join(",")); });
+    var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = "stops-" + $("from").value + "_" + $("to").value + ".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  /* ---------- داشبورد ---------- */
+  function dateRange() { return { from: $("from").value, to: $("to").value }; }
+  function renderDash(rows) {
+    var t = T[lang], R = dateRange(), tot = totals(rows);
+    var days = dayList(R.from, R.to), byDay = {};
+    rows.forEach(function (r) {
+      var d = byDay[r.date] || (byDay[r.date] = { qty: 0, waste: 0 }); d.qty += r.qty; d.waste += r.waste;
+    });
+    var nActive = Object.keys(byDay).length;
+    var qv = days.map(function (d) { return byDay[d] ? byDay[d].qty : 0; });
+    var ma = qv.map(function (_, i) { if (i < 6) return null; var s = 0; for (var k = i - 6; k <= i; k++) s += qv[k]; return s / 7; });
+    var rv = days.map(function (d) { return byDay[d] && byDay[d].qty > 0 ? byDay[d].waste / byDay[d].qty * 100 : null; });
+    var labels = days.map(shortDate);
+
+    var h = '<div class="kpis">' +
+      '<div class="kpi"><span class="l">' + esc(t.kProd) + '</span><b>' + esc(num(tot.qty)) + '</b>' + delta(tot.qty, function (p) { return p.qty; }, false) + '</div>' +
+      '<div class="kpi w"><span class="l">' + esc(t.kWaste) + '</span><b>' + esc(num(tot.waste)) + '</b>' + delta(tot.waste, function (p) { return p.waste; }, true) + '</div>' +
+      '<div class="kpi w"><span class="l">' + esc(t.kRate) + '</span><b>' + esc(num(tot.rate, 1)) + t.pct + '</b>' + delta(tot.rate, null, true, true) + '</div>' +
+      '<div class="kpi n"><span class="l">' + esc(t.kAvg) + '</span><b>' + esc(num(nActive ? tot.qty / nActive : 0)) + '</b><div class="d">' + esc(t.kReports) + ': ' + esc(num(tot.nrep)) + '</div></div></div>';
+
+    var AR = attReports(rows), AT = attTot(AR);
+    if (AR.length) {
+      h += '<div class="kpis">' +
+        '<div class="kpi"><span class="l">' + esc(t.kPresent) + '</span><b>' + esc(num(AT.P)) + '</b><div class="d">' + esc(t.unitShiftPerson) + '</div></div>' +
+        '<div class="kpi w"><span class="l">' + esc(t.kAbsent) + '</span><b>' + esc(num(AT.A)) + '</b><div class="d">' + esc(t.unitShiftPerson) + '</div></div>' +
+        '<div class="kpi w"><span class="l">' + esc(t.kAbsRate) + '</span><b>' + esc(num(AT.rate, 1)) + t.pct + '</b></div>' +
+        '<div class="kpi n"><span class="l">' + esc(t.kPer) + '</span><b>' + esc(num(AT.per, 1)) + '</b></div></div>';
+    }
+    var SL = stopsFiltered();
+    if (SL.length) h += stopKpis(SL, tot.nrep);
+    h += card(t.cDaily, legend(days.length >= 14 ? [{ name: t.sDaily, color: "var(--s1)" }, { name: t.sMA, color: "var(--ink)", line: 1 }] : [{ name: t.sDaily, color: "var(--s1)" }]) + chartHost("ch_daily"), t.cDailyHint);
+    h += '<div class="g2">';
+    h += card(t.cRate, chartHost("ch_rate"));
+
+    var byShift = group(rows, "shift").sort(function (a, b) { return b.qty - a.qty; });
+    var totalQ = tot.qty || 1;
+    h += card(t.cShiftShare, hbars(byShift.map(function (x) {
+      return { label: x.label, value: x.qty, text: num(x.qty), extra: num(x.qty / totalQ * 100, 1) + t.pct,
+        tip: x.label + "\n" + t.kProd + ": " + num(x.qty) + " (" + num(x.qty / totalQ * 100, 1) + t.pct + ")\n" + t.waste + ": " + num(x.waste) };
+    })));
+    h += '</div><div class="g2">';
+    var byProd = group(rows, "product").sort(function (a, b) { return b.qty - a.qty; });
+    h += card(t.cTop, hbars(qtyItems(byProd.slice(0, 6), t, true)));
+
+    var best = null, worst = null;
+    days.forEach(function (d, i) {
+      if (byDay[d] && (!best || byDay[d].qty > best.q)) best = { d: d, q: byDay[d].qty };
+      if (rv[i] != null && (!worst || rv[i] > worst.r)) worst = { d: d, r: rv[i] };
+    });
+    var wp = group(rows, "product").filter(function (x) { return x.qty > 0; }).sort(function (a, b) { return rate(b) - rate(a); })[0];
+    var ins = [];
+    if (best) ins.push([t.iBestDay, best.d + " · " + num(best.q)]);
+    if (worst) ins.push([t.iWorstWaste, worst.d + " · " + num(worst.r, 1) + t.pct]);
+    if (byProd[0]) ins.push([t.iTopProd, byProd[0].label]);
+    if (wp && wp.waste) ins.push([t.iTopWasteProd, wp.label + " · " + num(rate(wp), 1) + t.pct]);
+    ins.push([t.iActive, num(nActive) + " / " + num(days.length)]);
+    if (SL.length) h += card(t.stopsDash, stopBars(SL, "reason", stopSum(SL), 5), t.cStopReason);
+    h += card(t.cInsights, '<div class="ins">' + ins.map(function (x) { return '<div><span>' + esc(x[0]) + '</span><b><bdi>' + esc(x[1]) + '</bdi></b></div>'; }).join("") + '</div>');
+    h += '</div>';
+    if (AR.length) h += card(t.cAtt, legend([{ name: t.sPresent, color: "var(--s1)" }, { name: t.sAbsent, color: "var(--s2)", line: 1 }]) + chartHost("ch_att"), t.attNote);
+    $("v_dash").innerHTML = h;
+    if (AR.length) {
+      var ad = {}; AR.forEach(function (x) { var d = ad[x.first.date] || (ad[x.first.date] = { p: 0, a: 0 }); d.p += x.first.present; d.a += x.first.absent; });
+      xyChart($("ch_att"), { labels: labels, dates: days, aria: t.cAtt, h: 190,
+        bars: { name: t.sPresent, vals: days.map(function (d) { return ad[d] ? ad[d].p : 0; }), color: "#2a78d6" },
+        line: { name: t.sAbsent, vals: days.map(function (d) { return ad[d] ? ad[d].a : null; }), color: "#eb6834" } });
+    }
+
+    xyChart($("ch_daily"), { labels: labels, dates: days, aria: t.cDaily,
+      bars: { name: t.sDaily, vals: qv, color: "#2a78d6" }, line: days.length >= 14 ? { name: t.sMA, vals: ma, color: "#141c2b", dash: true } : null });
+    xyChart($("ch_rate"), { labels: labels, dates: days, aria: t.cRate, h: 190, yfmt: function (v) { return num(v, v % 1 ? 1 : 0); },
+      line: { name: t.sRate, vals: rv, color: "#eb6834" }, tipfmt: function (v) { return num(v, 1) + t.pct; } });
+  }
+
+  /* ---------- محصولات ---------- */
+  function renderProd(rows) {
+    var t = T[lang];
+    var byProd = group(rows, "product").sort(function (a, b) { return b.qty - a.qty; });
+    var h = '<div class="g2">';
+    h += card(t.cProdAll, hbars(qtyItems(byProd, t, true)));
+    var wr = byProd.filter(function (x) { return x.qty > 0; }).sort(function (a, b) { return rate(b) - rate(a); });
+    h += card(t.cProdWaste, hbars(wr.map(function (x) {
+      return { label: x.label, value: rate(x), text: num(rate(x), 1) + t.pct, extra: t.waste + " " + num(x.waste),
+        tip: x.label + "\n" + t.kRate + ": " + num(rate(x), 1) + t.pct + "\n" + t.waste + ": " + num(x.waste) + " / " + num(x.qty) };
+    }), { orange: true }));
+    h += '</div>';
+    h += card(t.cProdTable, '<div class="tbwrap"><table class="tb"><thead><tr><th>' + esc(t.thProd) + '</th><th class="num">' + esc(t.thQty) + '</th><th class="num">' + esc(t.thWaste) + '</th><th class="num">' + esc(t.thRate) + '</th></tr></thead><tbody>' +
+      byProd.map(function (x) {
+        return '<tr><td class="nm"><bdi>' + esc(x.label) + '</bdi></td><td class="num">' + esc(num(x.qty)) + '</td><td class="num">' + esc(num(x.waste)) + '</td><td class="num">' + esc(num(rate(x), 1)) + t.pct + '</td></tr>';
+      }).join("") + '</tbody></table></div>');
+    $("v_prod").innerHTML = h;
+  }
+
+  /* ---------- عملکرد ---------- */
+  function renderPerf(rows) {
+    var t = T[lang];
+    function sorted(f) { return group(rows, f).sort(function (a, b) { return b.qty - a.qty; }); }
+    var h = '<div class="g2">' + card(t.cSup, hbars(qtyItems(sorted("sup"), t, true))) + card(t.cLine, hbars(qtyItems(sorted("line"), t, true))) + '</div>';
+    h += '<div class="g2">' + card(t.cShift, hbars(qtyItems(sorted("shift"), t, true)));
+    // میانگین بر اساس روز هفته
+    var wd = [0, 0, 0, 0, 0, 0, 0], seen = [{}, {}, {}, {}, {}, {}, {}];
+    rows.forEach(function (r) { var w = weekday(r.date); wd[w] += r.qty; seen[w][r.date] = 1; });
+    var order = [6, 0, 1, 2, 3, 4, 5], vals = order.map(function (w) { var c = Object.keys(seen[w]).length; return c ? wd[w] / c : 0; });
+    h += card(t.cWeek, chartHost("ch_week")) + '</div>';
+    // ماتریس خط × شیفت
+    var lines = {}, shifts = {}, cell = {}, lk = [], sk = [], mx = 0;
+    rows.forEach(function (r) {
+      if (!lines[r.line]) { lines[r.line] = lab(r, "line"); lk.push(r.line); }
+      if (!shifts[r.shift]) { shifts[r.shift] = lab(r, "shift"); sk.push(r.shift); }
+      var k = r.line + "\u0001" + r.shift; cell[k] = (cell[k] || 0) + r.qty; if (cell[k] > mx) mx = cell[k];
+    });
+    lk.sort(); sk.sort();
+    var hm = '<div class="tbwrap"><table class="hm"><thead><tr><th></th>' + sk.map(function (s) { return '<th>' + esc(shifts[s]) + '</th>'; }).join("") + '</tr></thead><tbody>' +
+      lk.map(function (l) {
+        return '<tr><td class="nm"><bdi>' + esc(lines[l]) + '</bdi></td>' + sk.map(function (s) {
+          var v = cell[l + "\u0001" + s] || 0, a = mx ? v / mx : 0;
+          var bg = v ? "rgba(42,120,214," + (0.12 + 0.88 * a).toFixed(2) + ")" : "#f1f4fa";
+          var fg = a > 0.55 ? "#fff" : "#141c2b";
+          return '<td class="c" style="background:' + bg + ';color:' + fg + '" data-tip="' + attr(lines[l] + " · " + shifts[s] + "\n" + t.kProd + ": " + num(v)) + '">' + (v ? esc(num(v)) : "–") + '</td>';
+        }).join("") + '</tr>';
+      }).join("") + '</tbody></table></div>';
+    h += card(t.cHeat, hm, t.cHeatHint);
+    var AR = attReports(rows);
+    if (AR.length) {
+      function attTable(title, field) {
+        var g = attGroup(AR, field);
+        return '<h2 style="margin-top:12px">' + esc(title) + '</h2><div class="tbwrap"><table class="tb"><thead><tr><th>' + esc(t.thName) + '</th><th class="num">' + esc(t.thPresent) + '</th><th class="num">' + esc(t.thAbsent) + '</th><th class="num">' + esc(t.thAbsRate) + '</th><th class="num">' + esc(t.thPer) + '</th></tr></thead><tbody>' +
+          g.map(function (x) {
+            return '<tr><td class="nm"><bdi>' + esc(x.label) + '</bdi></td><td class="num">' + esc(num(x.P)) + '</td><td class="num">' + esc(num(x.A)) + '</td><td class="num">' + esc(num(x.rate, 1)) + t.pct + '</td><td class="num">' + esc(num(x.per, 1)) + '</td></tr>';
+          }).join("") + '</tbody></table></div>';
+      }
+      h += card(t.cAttBy, attTable(t.byShiftT, "shift") + attTable(t.bySupT, "sup") + attTable(t.byLineT, "line"), t.attNote);
+    }
+    $("v_perf").innerHTML = h;
+    xyChart($("ch_week"), { labels: order.map(function (w) { return t.days[w]; }), aria: t.cWeek, h: 200, allLabels: true,
+      bars: { name: t.kAvg, vals: vals, color: "#2a78d6" }, tipfmt: function (v) { return num(v); } });
+  }
+
+  /* ---------- انحراف پروسس و بسته‌بندی ---------- */
+  function devKey() { var R = dateRange(); return R.from + "|" + R.to; }
+  function loadDev() {
+    var s = getSession(); if (!s) return;
+    var R = dateRange(), key = devKey();
+    if (!R.from || !R.to || R.from > R.to) return;
+    if (diffDays(R.from, R.to) > 93) { state.dev = { key: key, state: "long", pack: [], proc: [] }; renderDev(); return; }
+    state.dev = { key: key, state: "loading", pack: [], proc: [] }; renderDev();
+    api({ action: "compare", token: s.token, from: R.from, to: R.to }).then(function (res) {
+      if (devKey() !== key) return;
+      if (res && res.ok) { state.dev = { key: key, state: "ok", pack: res.packaging || [], proc: res.process || [] }; }
+      else if (res && res.error === "auth") { forceLogout("errExpired"); return; }
+      else if (res && res.error === "range_long") state.dev = { key: key, state: "long", pack: [], proc: [] };
+      else state.dev = { key: key, state: "err", pack: [], proc: [] };
+      renderDev();
+    }).catch(function () { if (devKey() === key) { state.dev = { key: key, state: "err", pack: [], proc: [] }; renderDev(); } });
+  }
+  function renderDev() {
+    var t = T[lang], D = state.dev, el = $("v_dev");
+    var intro = '<p class="hint" style="margin:0 0 12px">' + esc(t.devIntro) + '</p>';
+    if (D.state === "loading") { el.innerHTML = intro + '<div class="empty">' + esc(t.devLoading) + '</div>'; return; }
+    if (D.state === "long") { el.innerHTML = intro + '<div class="notice">' + esc(t.devLong) + '</div>'; return; }
+    if (D.state === "err") { el.innerHTML = intro + '<div class="notice">' + esc(t.errNet) + '</div>'; return; }
+    if (D.state !== "ok") { el.innerHTML = ""; return; }
+    var fp = state.f.product;
+    var m = {}, tot = { proc: 0, pack: 0 }, dm = {};
+    function P(r) { if (!m[r.product]) m[r.product] = { product: r.product, productAr: r.productAr, pack: 0, proc: 0 }; return m[r.product]; }
+    function Dd(d) { if (!dm[d]) dm[d] = { pack: 0, proc: 0 }; return dm[d]; }
+    D.pack.forEach(function (r) { if (fp && r.product !== fp) return; P(r).pack += r.qty; Dd(r.date).pack += r.qty; tot.pack += r.qty; });
+    D.proc.forEach(function (r) { if (fp && r.product !== fp) return; P(r).proc += r.qty; Dd(r.date).proc += r.qty; tot.proc += r.qty; });
+    var list = Object.keys(m).map(function (k) { var x = m[k]; x.dev = x.proc - x.pack; x.label = lang === "ar" ? (x.productAr || x.product) : x.product; return x; });
+    if (!D.proc.length || !list.length) { el.innerHTML = intro + '<div class="empty">' + esc(t.devEmpty) + '</div>'; return; }
+    list.sort(function (a, b) { return Math.abs(b.dev) - Math.abs(a.dev); });
+    var dev = tot.proc - tot.pack, pct = tot.proc > 0 ? dev / tot.proc * 100 : 0;
+    var h = intro + '<div class="kpis">' +
+      '<div class="kpi"><span class="l">' + esc(t.kProc) + '</span><b>' + esc(num(tot.proc)) + '</b></div>' +
+      '<div class="kpi"><span class="l">' + esc(t.kPack) + '</span><b>' + esc(num(tot.pack)) + '</b></div>' +
+      '<div class="kpi ' + (dev ? "w" : "n") + '"><span class="l">' + esc(t.kDev) + '</span><b><bdi>' + esc(signed(dev)) + '</bdi></b></div>' +
+      '<div class="kpi ' + (dev ? "w" : "n") + '"><span class="l">' + esc(t.kDevPct) + '</span><b><bdi>' + esc((pct > 0 ? "+" : pct < 0 ? "−" : "") + num(Math.abs(pct), 1)) + t.pct + '</bdi></b></div></div>';
+    var lg = legend([{ name: t.dvPos, color: "var(--s2)" }, { name: t.dvNeg, color: "var(--s1)" }]);
+    var mxd = 0; list.forEach(function (x) { if (Math.abs(x.dev) > mxd) mxd = Math.abs(x.dev); });
+    h += '<div class="g2">' + card(t.cDevProd, lg + list.map(function (x) {
+      var w = mxd ? Math.abs(x.dev) / mxd * 50 : 0, pos = x.dev > 0;
+      var bar = x.dev ? '<i style="' + (pos ? "left:50%" : "right:50%") + ';width:' + w.toFixed(1) + '%;background:' + (pos ? "var(--s2)" : "var(--s1)") + '"></i>' : "";
+      return '<div class="dv" data-tip="' + attr(x.label + "\n" + t.thProc + ": " + num(x.proc) + "\n" + t.thPack + ": " + num(x.pack) + "\n" + t.thDev + ": " + signed(x.dev)) + '"><span class="n"><bdi>' + esc(x.label) + '</bdi></span><span class="t">' + bar + '</span><span class="vv"><bdi>' + esc(signed(x.dev)) + '</bdi></span></div>';
+    }).join(""));
+    h += card(t.cDevDay, lg + chartHost("ch_dev")) + '</div>';
+    h += card(t.cDevTable, '<div class="tbwrap"><table class="tb"><thead><tr><th>' + esc(t.thProd) + '</th><th class="num">' + esc(t.thProc) + '</th><th class="num">' + esc(t.thPack) + '</th><th class="num">' + esc(t.thDev) + '</th></tr></thead><tbody>' +
+      list.map(function (x) {
+        var c = x.dev === 0 ? "eq" : x.dev > 0 ? "po" : "pk", n = x.dev === 0 ? t.dvEq : x.dev > 0 ? t.dvPos : t.dvNeg;
+        return '<tr><td class="nm"><bdi>' + esc(x.label) + '</bdi></td><td class="num">' + esc(num(x.proc)) + '</td><td class="num">' + esc(num(x.pack)) + '</td><td class="num"><bdi>' + esc(signed(x.dev)) + '</bdi> <span class="chiprow ' + c + '">' + esc(n) + '</span></td></tr>';
+      }).join("") + '</tbody></table></div>');
+    el.innerHTML = h;
+    var R = dateRange(), days = dayList(R.from, R.to);
+    xyChart($("ch_dev"), { labels: days.map(shortDate), dates: days, aria: t.cDevDay, h: 200,
+      bars: { name: t.thDev, vals: days.map(function (d) { return dm[d] ? dm[d].proc - dm[d].pack : 0; }), color: "#eb6834", neg: "#2a78d6" },
+      tipfmt: function (v) { return signed(v); } });
+  }
+
+  /* ---------- فهرست گزارش‌ها ---------- */
+  function renderList(rows) {
+    var t = T[lang], order = [], m = {};
+    rows.forEach(function (r) {
+      var k = repKey(r);
+      if (!m[k]) { m[k] = { first: r, items: [] }; order.push(k); }
+      m[k].items.push(r);
+    });
+    var h = "";
+    order.forEach(function (k) {
+      var g = m[k], r = g.first, tq = 0, tw = 0;
+      g.items.forEach(function (x) { tq += x.qty; tw += x.waste; });
+      h += '<div class="rep"><div class="h"><span><bdi>' + esc(r.date) + '</bdi> · ' + esc(lab(r, "shift")) + ' · ' + esc(lab(r, "line")) + '</span>' +
+        '<small>' + esc(lab(r, "sup")) + '</small></div>' +
+        '<div class="sub">' + esc(t.submitted) + ' <bdi>' + esc(r.t) + '</bdi> · ' + esc(t.kProd) + ' ' + esc(num(tq)) + ' · ' + esc(t.kWaste) + ' ' + esc(num(tw)) +
+        (r.present != null && r.absent != null ? ' · ' + esc(t.sPresent) + ' ' + esc(num(r.present)) + ' · ' + esc(t.sAbsent) + ' ' + esc(num(r.absent)) : '') + '</div>';
+      g.items.forEach(function (x) {
+        h += '<div class="it"><span><bdi>' + esc(lab(x, "product")) + '</bdi></span>' +
+          '<span class="n">' + esc(num(x.qty)) + (x.waste ? '<span class="w">' + esc(t.waste) + ' ' + esc(num(x.waste)) + '</span>' : '') + '</span></div>';
+      });
+      if (r.notes) h += '<div class="note">' + esc(t.notes) + ' ' + esc(r.notes) + '</div>';
+      h += '</div>';
+    });
+    $("v_list").innerHTML = h + '<button id="csvBtn" class="secondary" type="button">' + esc(t.csv) + '</button>';
+    $("csvBtn").onclick = exportCsv;
+  }
+
+  /* ---------- رندر کلی ---------- */
+  function render() {
+    tipHide();
+    $("truncNotice").classList.toggle("hidden", !state.truncated);
+    $("truncNotice").textContent = T[lang].truncated;
+    renderNav();
+    var rows = filtered();
+    ["dash", "prod", "perf", "stops", "dev", "list"].forEach(function (v) { $("v_" + v).classList.toggle("hidden", state.view !== v); });
+    $("rangeNote").innerHTML = $("from").value && $("to").value ? "<bdi>" + esc($("from").value) + "</bdi> ← <bdi>" + esc($("to").value) + "</bdi>" : "";
+    if (state.view === "dev") { if (state.loaded) { if (state.dev.key !== devKey()) loadDev(); else renderDev(); } return; }
+    if (!state.loaded) return;
+    if (state.view === "stops") { renderStops(); return; }
+    if (!rows.length) {
+      $("v_" + state.view).innerHTML = '<div class="empty">' + esc(T[lang].empty) + '</div>'; return;
+    }
+    if (state.view === "dash") renderDash(rows);
+    else if (state.view === "prod") renderProd(rows);
+    else if (state.view === "perf") renderPerf(rows);
+    else renderList(rows);
+  }
+
+  function renderNav() {
+    var nav = $("nav"), t = T[lang];
+    nav.innerHTML = VIEWS.map(function (v) {
+      return '<button type="button" data-v="' + v[0] + '" class="' + (state.view === v[0] ? "on" : "") + '"' + (state.view === v[0] ? ' aria-current="page"' : "") + '><svg viewBox="0 0 24 24" aria-hidden="true">' + v[2] + '</svg><span>' + esc(t[v[1]]) + '</span></button>';
+    }).join("");
+    Array.prototype.forEach.call(nav.querySelectorAll("button"), function (b) {
+      b.onclick = function () { state.view = b.getAttribute("data-v"); render(); window.scrollTo(0, 0); };
+    });
+  }
+
+  function applyLang() {
+    var t = T[lang];
+    document.documentElement.lang = lang; document.documentElement.dir = "rtl"; document.title = t.title;
+    $("t_title").textContent = t.title; $("t_login").textContent = t.login;
+    $("l_lname").textContent = t.lname; $("l_lpass").textContent = t.lpass; $("loginBtn").textContent = t.loginBtn;
+    $("l_who").textContent = t.who; $("logout").textContent = t.logout;
+    $("t_filters").textContent = t.filters;
+    $("c0").textContent = t.today; $("c7").textContent = t.d7; $("c30").textContent = t.d30; $("c90").textContent = t.d90;
+    $("l_from").textContent = t.from; $("l_to").textContent = t.to; $("showBtn").textContent = t.show;
+    FIELDS.forEach(function (d) { $("l_" + d[0]).textContent = t[d[2]]; });
+    $("btn_fa").className = lang === "fa" ? "on" : ""; $("btn_ar").className = lang === "ar" ? "on" : "";
+    var ln = $("lname"), prev = ln.value;
+    ln.innerHTML = '<option value="">' + esc(t.choose) + '</option>' +
+      C.managers.map(function (m, i) { return '<option value="' + i + '">' + esc(m[lang]) + '</option>'; }).join("");
+    if (prev !== "") ln.value = prev; else if (C.managers.length === 1) ln.value = "0";
+    buildFilterOptions(); showView(); render();
+    $("setup").style.display = C.SCRIPT_URL ? "none" : "block";
+    $("setup").textContent = t.noUrl;
+  }
+  function setLang(l) { lang = l; try { localStorage.setItem("lang", l); } catch (e) {} applyLang(); }
+  $("btn_fa").onclick = function () { setLang("fa"); };
+  $("btn_ar").onclick = function () { setLang("ar"); };
+
+  function showView() {
+    var s = getSession();
+    $("loginView").classList.toggle("hidden", !!s);
+    $("appView").classList.toggle("hidden", !s);
+    $("nav").classList.toggle("hidden", !s);
+    if (s) $("whoName").textContent = lang === "ar" ? (s.nameAr || s.name) : s.name;
+  }
+
+  /* ---------- ورود/خروج ---------- */
+  function forceLogout(msgKey) {
+    setSession(null); state.rows = []; state.prev = null; state.stops = []; state.prevStops = null; state.loaded = false; state.dev = { key: "", state: "idle", pack: [], proc: [] };
+    showView(); render();
+    if (msgKey) toast(T[lang][msgKey], "warn");
+  }
+  $("logout").onclick = function () { forceLogout(); };
+
+  $("loginBtn").onclick = function () {
+    var t = T[lang], mi = $("lname").value, pw = $("lpass").value;
+    if (!C.SCRIPT_URL) { toast(t.noUrl, "err"); return; }
+    if (mi === "" || !pw) { toast(t.errLoginFields, "err"); return; }
+    var btn = $("loginBtn"); btn.disabled = true; btn.textContent = t.logging;
+    api({ action: "login", id: C.managers[Number(mi)].id, password: pw }).then(function (res) {
+      if (res && res.ok) {
+        if (res.role !== "manager") { toast(T[lang].errNotManager, "err"); return; }
+        setSession({ id: C.managers[Number(mi)].id, name: res.name, nameAr: res.nameAr, token: res.token });
+        $("lpass").value = ""; showView(); setRange(6); state.view = "dash"; load();
+      } else {
+        var e = res && res.error;
+        toast(e === "locked" ? t.errLocked : e === "bad_user" ? t.errNoUser : e === "not_configured" ? t.errNotConf : e === "bad_password" ? t.errBad : t.errNet, "err");
+      }
+    }).catch(function () { toast(T[lang].errNet, "err"); })
+      .then(function () { btn.disabled = false; btn.textContent = T[lang].loginBtn; });
+  };
+  $("lpass").addEventListener("keydown", function (e) { if (e.key === "Enter") $("loginBtn").click(); });
+
+  /* ---------- دریافت گزارش‌ها ---------- */
+  function load() {
+    var s = getSession(); if (!s) return;
+    var from = $("from").value, to = $("to").value, t = T[lang];
+    if (!from || !to || from > to) { toast(t.errRange, "err"); return; }
+    var btn = $("showBtn"); btn.disabled = true; btn.textContent = t.loading;
+    $("views").classList.add("busy");
+    var len = diffDays(from, to) + 1, pFrom = addDays(from, -len), pTo = addDays(from, -1);
+    var main = api({ action: "reports", token: s.token, from: from, to: to });
+    var prev = api({ action: "reports", token: s.token, from: pFrom, to: pTo }).then(function (r) { return r && r.ok ? { rows: r.rows || [], stops: r.stops || [] } : null; }).catch(function () { return null; });
+    Promise.all([main, prev]).then(function (a) {
+      var res = a[0];
+      if (res && res.ok) {
+        state.rows = res.rows || []; state.stops = res.stops || []; state.truncated = !!res.truncated; state.loaded = true;
+        state.prev = a[1] ? a[1].rows : null; state.prevStops = a[1] ? a[1].stops : null;
+        state.dev = { key: "", state: "idle", pack: [], proc: [] };
+        buildFilterOptions(); render();
+        $("fbox").open = false;
+      } else if (res && res.error === "auth") { forceLogout("errExpired"); }
+      else if (res && res.error === "bad_range") { toast(T[lang].errRange, "err"); }
+      else { toast(T[lang].errNet, "err"); }
+    }).catch(function () { toast(T[lang].errNet, "err"); })
+      .then(function () { btn.disabled = false; btn.textContent = T[lang].show; $("views").classList.remove("busy"); });
+  }
+  $("showBtn").onclick = load;
+  [["c0", 0], ["c7", 6], ["c30", 29], ["c90", 89]].forEach(function (c) {
+    $(c[0]).onclick = function () { setRange(c[1]); load(); };
+  });
+  FIELDS.forEach(function (d) {
+    $(d[0]).addEventListener("change", function () { state.f[d[1]] = $(d[0]).value; render(); });
+  });
+  var rz;
+  window.addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (state.loaded) render(); }, 150); });
+
+  /* ---------- خروجی CSV ---------- */
+  function csvCell(v) {
+    var s = String(v == null ? "" : v);
+    if (/^[=+\-@]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function exportCsv() {
+    var rows = filtered();
+    if (!rows.length) { toast(T[lang].csvEmpty, "warn"); return; }
+    var lines = [T[lang].csvHead.concat(T[lang].csvHeadAtt).map(csvCell).join(",")];
+    rows.forEach(function (r) {
+      lines.push([r.date, r.t, lab(r, "sup"), lab(r, "line"), lab(r, "shift"), lab(r, "product"), r.qty, r.waste, r.notes, r.present == null ? "" : r.present, r.absent == null ? "" : r.absent].map(csvCell).join(","));
+    });
+    var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "reports-" + $("from").value + "_" + $("to").value + ".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  /* ---------- شروع ---------- */
+  setRange(6);
+  applyLang();
+  if (getSession() && C.SCRIPT_URL) load();
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
